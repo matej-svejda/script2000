@@ -26,12 +26,16 @@ struct ParseTableEntry
 		: action(action), target(target), token(token) {}
 };
 
+
 class ParseTableCalculation
 {
 public:
 	ParseTableCalculation(const std::vector<std::vector<std::string>>& rules);
 
 	std::vector<std::vector<ParseTableEntry>> calculateTable();
+	void printTable(const std::vector<std::vector<ParseTableEntry>>& table);
+
+	static bool isTerminal(const std::string& token);
 
 private:
 	struct Item
@@ -49,8 +53,7 @@ private:
 	std::string rightOfDot(const Item& item);
 	std::set<std::string> getFirstSet(const std::vector<std::string>& tokens);
 	void closeItemSet(std::set<Item>& set);
-	void printItemSet(const std::set<Item>& set);
-	void printTable(const std::vector<std::vector<ParseTableEntry>>& table, const std::list<std::set<Item>>& item_sets);
+	void printItemSets(const std::list<std::set<Item>>& item_sets);
 
 	std::vector<std::vector<std::string>> rules_;
 	std::map<std::string, std::vector<int>> non_terminal_to_rule_indices_;

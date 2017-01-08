@@ -16,7 +16,7 @@ ParseTableCalculation::ParseTableCalculation(const std::vector<std::vector<std::
 	}
 }
 
-bool isTerminal(const std::string& token)
+bool ParseTableCalculation::isTerminal(const std::string& token)
 {
 	return std::islower(token[0]);
 }
@@ -105,42 +105,44 @@ void ParseTableCalculation::closeItemSet(std::set<Item>& set)
 	}
 }
 
-void ParseTableCalculation::printItemSet(const std::set<Item>& set)
+void ParseTableCalculation::printItemSets(const std::list<std::set<Item>>& item_sets)
 {
-	for (const Item& item : set)
+	int i = 0;
+	std::cout << "Item sets" << std::endl;
+	for (auto& set : item_sets)
 	{
-		for (int i = 0; i < static_cast<int>(rules_[item.ruleIndex].size()); ++i)
+		std::cout << "\tState [" << i << "]\n";
+		for (const Item& item : set)
 		{
-			if (i == item.dotPosition)
+			std::cout << "\t\t";
+			for (int i = 0; i < static_cast<int>(rules_[item.ruleIndex].size()); ++i)
+			{
+				if (i == item.dotPosition)
+				{
+					std::cout << ".";
+				}
+				std::cout << rules_[item.ruleIndex][i] << " ";
+			}
+			if (item.dotPosition == static_cast<int>(rules_[item.ruleIndex].size()))
 			{
 				std::cout << ".";
 			}
-			std::cout << rules_[item.ruleIndex][i] << " ";
+			std::cout << " | " << item.lookahead << std::endl;
 		}
-		if (item.dotPosition == static_cast<int>(rules_[item.ruleIndex].size()))
-		{
-			std::cout << ".";
-		}
-		std::cout << " | " << item.lookahead << std::endl;
-	}
-}
-
-
-void ParseTableCalculation::printTable(const std::vector<std::vector<ParseTableEntry>>& table, const std::list<std::set<Item>>& item_sets)
-{
-	int i = 0;
-	for (auto& set : item_sets)
-	{
-		std::cout << "State [" << i << "]\n";
-		printItemSet(set);
 		std::cout << std::endl;
 		++i;
 	}
+	std::cout << std::endl;
+}
 
-	i = 0;
+
+void ParseTableCalculation::printTable(const std::vector<std::vector<ParseTableEntry>>& table)
+{
+	int i = 0;
+	std::cout << "Parse table" << std::endl;
 	for (const auto& row : table)
 	{
-		std::cout << i << " ";
+		std::cout << "\t" << i << " ";
 		for (const ParseTableEntry& entry : row)
 		{
 			std::cout << "\"" << entry.token << "\",";
@@ -161,6 +163,7 @@ void ParseTableCalculation::printTable(const std::vector<std::vector<ParseTableE
 		std::cout << std::endl;
 		++i;
 	}
+	std::cout << std::endl;
 }
 
 std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::calculateTable()
@@ -219,7 +222,7 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::calculateTable(
 		}
 	}
 
-	printTable(result, item_sets);
+	printItemSets(item_sets);
 
 	return result;
 }
