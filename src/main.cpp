@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "parse_table.h"
+#include "parse_table_calculation.h"
 #include "parser.h"
 
 int main()
@@ -11,20 +11,29 @@ int main()
 		{"A", "a", "A"},
 		{"A", "b"}
 	};*/
-	std::vector<std::vector<std::string>> rules = {
+	/*std::vector<std::vector<std::string>> rules = {
 		{"S", "E", "eof"},
 		{"E", "E", "mul", "B"},
 		{"E", "E", "add", "B"},
 		{"E", "B"},
 		{"B", "zero"},
 		{"B", "one"}
+	};*/
+	std::vector<std::vector<std::string>> rules = {
+		{"S'", "S", "eof"},
+		{"S", "A", "B"},
+		{"A", "a", "A", "b"},
+		{"A", "a"},
+		{"B", "d"}
 	};
-	auto table = calculateParseTable(rules);
+	ParseTableCalculation table_calculation(rules);
+	auto table = table_calculation.calculateTable();
 	Parser parser(rules, table);
-	parser.readToken("one");
-	parser.readToken("add");
-	parser.readToken("one");
-	parser.readToken("eof");
+	std::vector<std::string> tokens = {"a", "a", "a", "b", "b", "d", "eof"};
+	for (const std::string& token : tokens)
+	{
+		parser.read(token);
+	}
 	return 0;
 }
 

@@ -2,17 +2,17 @@
 
 #include <stack>
 
-#include "parse_table.h"
+#include "parse_table_calculation.h"
 
 class Parser
 {
 public:
 	Parser(const std::vector<std::vector<std::string>>& rules, const std::vector<std::vector<ParseTableEntry>>& parse_table);
 
-	void readToken(const std::string& token);
+	void read(const std::string& token);
 
 private:
-	ParseTableEntry entryForSymbol(const std::string& token);
+	ParseTableEntry entryForToken(const std::string& token);
 
 	std::vector<std::vector<ParseTableEntry>> parse_table_;
 	std::vector<std::vector<std::string>> rules_;

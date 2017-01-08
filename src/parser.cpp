@@ -10,55 +10,46 @@ Parser::Parser(const std::vector<std::vector<std::string>>& rules, const std::ve
 	stack_.push(0);
 }
 
-ParseTableEntry Parser::entryForSymbol(const std::string& symbol)
+ParseTableEntry Parser::entryForToken(const std::string& token)
 {
 	auto row = parse_table_[stack_.top()];
 	for (ParseTableEntry& entry : row)
 	{
-		std::cout << entry.target << " " << entry.action << std::endl;
-		if (entry.symbol == symbol || entry.action == ParseActionReduce)
+		if (entry.token == token)
 		{
 			return entry;
 		}
 	}
-	assert(false);
+	assert(false && "Parse error");
 }
 
-void Parser::readToken(const std::string& token)
+void Parser::read(const std::string& token)
 {
+	ParseTableEntry entry;
 	for (;;)
 	{
-		ParseTableEntry entry = entryForSymbol(token);
-		switch (entry.action)
+		entry = entryForToken(token);
+		if (entry.action != ParseActionReduce)
 		{
-		case ParseActionAccept:
-		{
-			std::cout << "accept" << std::endl;
-			return;
-		}
-		case ParseActionGoto:
-		{
-			assert(false);
 			break;
 		}
-		case ParseActionReduce:
+		const auto& rule = rules_[entry.target];
+		std::cout << "reduce with rule " << entry.target << std::endl;
+		for (int i = 0; i < static_cast<int>(rule.size() - 1); ++i)
 		{
-			const auto& rule = rules_[entry.target];
-			std::cout << "reduce with rule " << entry.target << std::endl;
-			for (int i = 0; i < static_cast<int>(rule.size() - 1); ++i)
-			{
-				stack_.pop();
-			}
-			stack_.push(entryForSymbol(rule.front()).target);
-			break;
+			stack_.pop();
 		}
-		case ParseActionShift:
-		{
-			std::cout << "shift state " << entry.target << std::endl;
-			stack_.push(entry.target);
-			return;
-		}
-		}
+		stack_.push(entryForToken(rule.front()).target);
 	}
 
+	switch (entry.action)
+	{
+	case ParseActionAccept:
+		std::cout << "accept" << std::endl;
+		return;
+	case ParseActionShift:
+		std::cout << "shift state " << entry.target << std::endl;
+		stack_.push(entry.target);
+		return;
+	}
 }

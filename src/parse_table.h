@@ -1,25 +1,13 @@
 #pragma once
 
-#include <vector>
 #include <string>
-#include <initializer_list>
+#include <vector>
 
-enum ParseAction
+/*
+class ParseTable
 {
-	ParseActionShift,
-	ParseActionReduce,
-	ParseActionGoto,
-	ParseActionAccept
+public:
+	void add(ParseAction action, int from_state, int to_state, const std::string& token, const std::string& lookahead);
+
 };
-
-struct ParseTableEntry
-{
-	ParseAction action;
-	std::string symbol;
-	int target;
-
-	ParseTableEntry(ParseAction action, const std::string& symbol, int target)
-		: action(action), symbol(symbol), target(target) {}
-};
-
-std::vector<std::vector<ParseTableEntry>> calculateParseTable(const std::vector<std::vector<std::string>>& rules);
+*/
