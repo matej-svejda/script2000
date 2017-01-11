@@ -6,35 +6,82 @@
 int main()
 {
 	/*std::vector<std::vector<std::string>> grammar = {
-		{"S'", "S", "eof"},
+		{"S'", "S", "EOF"},
 		{"S", "A", "A"},
 		{"A", "a", "A"},
 		{"A", "b"}
 	};*/
 	/*std::vector<std::vector<std::string>> rules = {
-		{"S", "E", "eof"},
+		{"S", "E", "EOF"},
 		{"E", "E", "mul", "B"},
 		{"E", "E", "add", "B"},
 		{"E", "B"},
 		{"B", "zero"},
 		{"B", "one"}
 	};*/
+
+	/*
+program ::= commands.
+commands ::= command SEMICOLON commands.
+commands ::= .
+command ::= PRINT rvalue. { t->print(); }
+command ::= VARIABLE(var) ASSIGN rvalue. { t->assign(var); }
+rvalue ::= rvalue SUB rvalue. { t->sub(); }
+rvalue ::= rvalue ADD rvalue. { t->add(); }
+rvalue ::= rvalue MUL rvalue. { t->mul(); }
+rvalue ::= rvalue DIV rvalue. { t->div(); }
+rvalue ::= NUMBER(num). { t->pushNumber(num); }
+rvalue ::= VARIABLE(var). { t->pushVariable(var); }
+	*/
+
 	std::vector<std::vector<std::string>> rules = {
-		{"S'", "S", "eof"},
-		{"S", "A", "B"},
-		{"A", "a", "A", "b"},
-		{"A", "a"},
-		{"B", "d"}
+		{"program", "commands", "EOF"},
+		{"commands", "command", "SEMICOLON", "commands"},
+		{"commands", ""},
+		{"command", "PRINT", "rvalue"},
+		{"command", "VARIABLE", "ASSIGN", "rvalue"},
+		{"rvalue", "rvalue", "SUB", "rvalue"},
+		{"rvalue", "rvalue", "ADD", "rvalue"},
+		{"rvalue", "rvalue", "MUL", "rvalue"},
+		{"rvalue", "rvalue", "DIV", "rvalue"},
+		{"rvalue", "NUMBER"},
+		{"rvalue", "VARIABLE"}
 	};
 	ParseTableCalculation table_calculation(rules);
 	auto table = table_calculation.calculateTable();
 	table_calculation.printTable(table);
 	Parser parser(rules, table);
-	std::vector<std::string> tokens = {"a", "a", "a", "b", "b", "d", "eof"};
-	std::vector<std::string> values = {"a", "a", "a", "b", "b", "d", ""};
-	for (int i = 0; i < static_cast<int>(tokens.size()); ++i)
+	std::vector<std::pair<std::string, std::string>> tokens = {
+
+		{"VARIABLE", "a"},
+		{"ASSIGN", ""},
+		{"NUMBER", "1"},
+		{"ADD", ""},
+		{"NUMBER", "2"},
+		{"MUL", ""},
+		{"NUMBER", "3"},
+		{"SEMICOLON", ""},
+
+		{"VARIABLE", "b"},
+		{"ASSIGN", ""},
+		{"VARIABLE", "a"},
+		{"SUB", ""},
+		{"NUMBER", "4"},
+		{"SEMICOLON", ""},
+
+		{"PRINT", ""},
+		{"VARIABLE", "a"},
+		{"SEMICOLON", ""},
+
+		{"PRINT", ""},
+		{"VARIABLE", "b"},
+		{"SEMICOLON", ""},
+
+		{"EOF", ""}
+	};
+	for (const auto& token : tokens)
 	{
-		bool success = parser.read(tokens[i], values[i], true);
+		bool success = parser.read(token.first, token.second, true);
 		if (!success)
 		{
 			return 1;

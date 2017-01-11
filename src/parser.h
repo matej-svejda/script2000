@@ -30,7 +30,7 @@ public:
 	void printAST();
 
 private:
-	bool entryForToken(const std::string& token, ParseTableEntry& entry);
+	bool entryForToken(const std::string& token, ParseTableEntry& entry, bool print_debug);
 
 	std::vector<std::vector<ParseTableEntry>> parse_table_;
 	std::vector<std::vector<std::string>> rules_;

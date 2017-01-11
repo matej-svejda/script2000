@@ -10,8 +10,20 @@ Parser::Parser(const std::vector<std::vector<std::string>>& rules, const std::ve
 	stack_.push(0);
 }
 
-bool Parser::entryForToken(const std::string& token, ParseTableEntry& entry)
+bool Parser::entryForToken(const std::string& token, ParseTableEntry& entry, bool print_debug)
 {
+	if (print_debug)
+	{
+		std::cout << "Looking for tansition with token " << token << std::endl;
+		auto stack = stack_;
+		std::cout << "Stack ";
+		while (!stack.empty())
+		{
+			std::cout << stack.top() << " ";
+			stack.pop();
+		}
+		std::cout << std::endl;
+	}
 	auto row = parse_table_[stack_.top()];
 	for (ParseTableEntry& candidate_entry : row)
 	{
@@ -26,10 +38,15 @@ bool Parser::entryForToken(const std::string& token, ParseTableEntry& entry)
 
 bool Parser::read(const std::string& token, const std::string& value, bool print_debug)
 {
+	if (print_debug)
+	{
+		std::cout << "read token " << token.c_str() << std::endl;
+	}
+
 	ParseTableEntry entry;
 	for (;;)
 	{
-		if (!entryForToken(token, entry))
+		if (!entryForToken(token, entry, print_debug))
 		{
 			if (print_debug)
 			{
@@ -52,14 +69,23 @@ bool Parser::read(const std::string& token, const std::string& value, bool print
 		node.ruleIndex = entry.target;
 		for (int i = static_cast<int>(rule.size() - 1); i >= 1; --i)
 		{
+			if (rule[i].empty())
+			{
+				continue;
+			}
 			node.children[i - 1] = tree_nodes_stack_.top();
 			tree_nodes_stack_.pop();
 			stack_.pop();
 		}
 		tree_nodes_stack_.push(node);
 		ParseTableEntry new_entry;
-		bool success = entryForToken(rule.front(), new_entry);
+		bool success = entryForToken(rule.front(), new_entry, print_debug);
 		assert(success && "Undefined state");
+		assert(new_entry.action == ParseActionShift);
+		if (print_debug)
+		{
+			std::cout << "Transitioning to state " << new_entry.target << std::endl;
+		}
 		stack_.push(new_entry.target);
 	}
 

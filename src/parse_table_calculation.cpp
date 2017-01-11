@@ -2,13 +2,13 @@
 
 #include <cassert>
 #include <iostream>
-
+#include <algorithm>
 
 ParseTableCalculation::ParseTableCalculation(const std::vector<std::vector<std::string>>& rules)
 	: rules_(rules)
 {
 	assert(rules_.front().size() == 3);
-	assert(rules_.front()[2] == "eof");
+	assert(rules_.front()[2] == "EOF");
 
 	for (int i = 0; i < static_cast<int>(rules_.size()); ++i)
 	{
@@ -18,7 +18,7 @@ ParseTableCalculation::ParseTableCalculation(const std::vector<std::vector<std::
 
 bool ParseTableCalculation::isTerminal(const std::string& token)
 {
-	return std::islower(token[0]);
+	return std::isupper(token[0]);
 }
 
 std::set<std::string> ParseTableCalculation::getFirstSet(const std::vector<std::string>& tokens)
@@ -166,10 +166,54 @@ void ParseTableCalculation::printTable(const std::vector<std::vector<ParseTableE
 	std::cout << std::endl;
 }
 
+
+std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::applyOperatorPrecedence(std::vector<std::vector<ParseTableEntry>>& table)
+{
+	//return {};
+	int state = 0;
+	std::map<std::string, ParseAction> action_to_pick = {
+		{"ADD", ParseActionShift},
+		{"SUB", ParseActionShift},
+		{"MUL", ParseActionReduce},
+		{"DIV", ParseActionReduce}
+	};
+	std::vector<std::vector<ParseTableEntry>> filtered_table(table.size());
+	for (int i = 0; i < static_cast<int>(table.size()); ++i)
+	{
+		std::map<std::string, ParseTableEntry> entries_by_token;
+		std::vector<ParseTableEntry> filtered_row;
+		for (ParseTableEntry& entry : table[i])
+		{
+			auto found = entries_by_token.find(entry.token);
+			if (found != entries_by_token.end())
+			{
+				auto found_action = action_to_pick.find(entry.token);
+				assert(found_action != action_to_pick.end());
+				if (found_action->second == entry.action) // ditch the old one!!
+				{
+					std::cout << "ditching " << entry.action << " for " << entry.token << std::endl;
+					auto to_replace = std::find(filtered_row.begin(), filtered_row.end(), found->second);
+					assert(to_replace != filtered_row.end());
+					*to_replace = entry;
+					entries_by_token[entry.token] = entry;
+				}
+			}
+			else
+			{
+				filtered_row.push_back(entry);
+				entries_by_token[entry.token] = entry;
+			}
+		}
+		filtered_table[i] = filtered_row;
+		++state;
+	}
+	return filtered_table;
+}
+
 std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::calculateTable()
 {
 	std::list<std::set<Item>> item_sets;
-	item_sets.push_back({Item(0, 1, "eof")});
+	item_sets.push_back({Item(0, 1, "EOF")});
 	closeItemSet(item_sets.front());
 
 	std::vector<std::vector<ParseTableEntry>> result;
@@ -189,9 +233,9 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::calculateTable(
 			{
 				continue;
 			}
-			if (right_of_dot == "eof")
+			if (right_of_dot == "EOF")
 			{
-				result.back().push_back(ParseTableEntry(ParseActionAccept, -1, "eof"));
+				result.back().push_back(ParseTableEntry(ParseActionAccept, -1, "EOF"));
 				continue;
 			}
 			handled_transitions.insert(right_of_dot);
@@ -224,7 +268,7 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::calculateTable(
 
 	printItemSets(item_sets);
 
-	return result;
+	return applyOperatorPrecedence(result);;
 }
 
 
