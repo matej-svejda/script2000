@@ -6,7 +6,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11 -Wall")
 
 add_executable(script2000
 	src/main.cpp
-	src/grammar.cpp
+	src/tokenizer.cpp
 	src/parse_table_calculation.cpp
 	src/parser.cpp
 	src/parse_table.h

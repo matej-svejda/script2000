@@ -172,10 +172,10 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::applyOperatorPr
 	//return {};
 	int state = 0;
 	std::map<std::string, ParseAction> action_to_pick = {
-		{"ADD", ParseActionShift},
-		{"SUB", ParseActionShift},
-		{"MUL", ParseActionReduce},
-		{"DIV", ParseActionReduce}
+		{"ADD", ParseActionReduce},
+		{"SUB", ParseActionReduce},
+		{"MUL", ParseActionShift},
+		{"DIV", ParseActionShift}
 	};
 	std::vector<std::vector<ParseTableEntry>> filtered_table(table.size());
 	for (int i = 0; i < static_cast<int>(table.size()); ++i)

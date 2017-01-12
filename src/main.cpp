@@ -44,6 +44,7 @@ rvalue ::= VARIABLE(var). { t->pushVariable(var); }
 		{"rvalue", "rvalue", "ADD", "rvalue"},
 		{"rvalue", "rvalue", "MUL", "rvalue"},
 		{"rvalue", "rvalue", "DIV", "rvalue"},
+		{"rvalue", "OPEN_BRACKET", "rvalue", "CLOSE_BRACKET"},
 		{"rvalue", "NUMBER"},
 		{"rvalue", "VARIABLE"}
 	};
@@ -55,9 +56,15 @@ rvalue ::= VARIABLE(var). { t->pushVariable(var); }
 
 		{"VARIABLE", "a"},
 		{"ASSIGN", ""},
+		{"NUMBER", "0.5"},
+		{"MUL", ""},
+		{"NUMBER", "100"},
+		{"DIV", ""},
+		{"OPEN_BRACKET", ""},
 		{"NUMBER", "1"},
 		{"ADD", ""},
 		{"NUMBER", "2"},
+		{"CLOSE_BRACKET", ""},
 		{"MUL", ""},
 		{"NUMBER", "3"},
 		{"SEMICOLON", ""},
