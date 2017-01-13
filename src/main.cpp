@@ -2,6 +2,7 @@
 
 #include "parse_table_calculation.h"
 #include "parser.h"
+#include "tokenizer.h"
 
 int main()
 {
@@ -52,7 +53,7 @@ rvalue ::= VARIABLE(var). { t->pushVariable(var); }
 	auto table = table_calculation.calculateTable();
 	table_calculation.printTable(table);
 	Parser parser(rules, table);
-	std::vector<std::pair<std::string, std::string>> tokens = {
+	/*std::vector<std::pair<std::string, std::string>> tokens = {
 
 		{"VARIABLE", "a"},
 		{"ASSIGN", ""},
@@ -85,15 +86,20 @@ rvalue ::= VARIABLE(var). { t->pushVariable(var); }
 		{"SEMICOLON", ""},
 
 		{"EOF", ""}
-	};
-	for (const auto& token : tokens)
+	};*/
+
+	Tokenizer tokenizer("../test.2000");
+	std::string token, value;
+	while (tokenizer.getNextToken(token, value))
 	{
-		bool success = parser.read(token.first, token.second, true);
+		std::cout << token << " | " << value << std::endl;
+		bool success = parser.read(token, value, true);
 		if (!success)
 		{
 			return 1;
 		}
 	}
+	parser.read("EOF", "");
 	parser.printAST();
 	return 0;
 }
