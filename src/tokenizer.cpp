@@ -1,12 +1,15 @@
 #include "tokenizer.h"
 
 #include <iostream>
+#include <cassert>
 
 
 Tokenizer::Tokenizer(const std::string& filename)
 	: file_(filename)
 {
 	dfas_.push_back(dfaForFixedString("print", "PRINT"));
+	dfas_.push_back(dfaForFixedString("function", "FUNCTION"));
+	dfas_.push_back(dfaForFixedString("return", "RETURN"));
 	SimpleDFA variable_name_dfa;
 	variable_name_dfa.tokenName = "VARIABLE";
 	variable_name_dfa.acceptingStates.insert(0);
@@ -56,72 +59,80 @@ Tokenizer::~Tokenizer()
 	file_.close();
 }
 
-bool Tokenizer::getNextToken(std::string& token_name, std::string& value)
+bool Tokenizer::getNextToken(std::string& token_name, std::string& read_string)
 {
-	value = "";
-	if (!file_.is_open())
+	read_string = "";
+	if (!file_.is_open() || !moveAcrossWhitespace())
 	{
-		return false;
+		file_.close();
+		token_name = "EOF";
+		return true;
 	}
-	auto finish_dfas = [this, &value, &token_name] ()
-	{
-		if (value.empty())
-		{
-			return false;
-		}
-		bool found_finished_dfa = false;
-		for (SimpleDFA& dfa : dfas_)
-		{
-			if (!found_finished_dfa && dfa.acceptingStates.find(dfa.state) != dfa.acceptingStates.end())
-			{
-				token_name = dfa.tokenName;
-				found_finished_dfa = true;
-			}
-			dfa.state = 0;
-		}
-		return found_finished_dfa;
-	};
 
 	char c;
 	for (;;)
 	{
+		bool finish_up = false;
 		if (!file_.get(c))
 		{
 			file_.close();
-			return finish_dfas();
+			finish_up = true;
 		}
-
-		//std::cout << "char is [" << c << "], int val " << static_cast<int>(c) << std::endl;
-		if (isWhitespace(c))
+		else if (readWhitespace(c))
 		{
-			if (finish_dfas())
+			finish_up = true;
+		}
+		else if (!parseSeperator(c).empty())
+		{
+			if (read_string.empty())
+			{
+				token_name = parseSeperator(c);
+				read_string = c;
+				return true;
+			}
+			file_.unget();
+			finish_up = true;
+		}
+		if (finish_up)
+		{
+			if (read_string.empty())
 			{
 				return true;
 			}
-			continue;
+			finishDFAs(token_name);
+			return !token_name.empty();
 		}
-		token_name = parseSeperator(c);
-		if (!token_name.empty()) // found seperator token
-		{
-			if (finish_dfas())
-			{
-				file_.unget();
-			}
-			return true;
-		}
-		for (SimpleDFA& dfa : dfas_)
-		{
-			if (dfa.state == -1)
-			{
-				continue;
-			}
-			dfa.state = dfa.transitions[dfa.state](c);
-			//std::cout << "dfa " << dfa.tokenName << " in state " << dfa.state << std::endl;
-		}
-		value += c;
+
+		transitionDFAs(c);
+		read_string += c;
 	}
 }
 
+
+void Tokenizer::finishDFAs(std::string& token_name)
+{
+	token_name = "";
+	for (SimpleDFA& dfa : dfas_)
+	{
+		if (token_name.empty() && dfa.acceptingStates.find(dfa.state) != dfa.acceptingStates.end())
+		{
+			token_name = dfa.tokenName;
+		}
+		dfa.state = 0;
+	}
+}
+
+void Tokenizer::transitionDFAs(char c)
+{
+	for (SimpleDFA& dfa : dfas_)
+	{
+		if (dfa.state == -1)
+		{
+			continue;
+		}
+		dfa.state = dfa.transitions[dfa.state](c);
+	}
+}
 
 Tokenizer::SimpleDFA Tokenizer::dfaForFixedString(const std::string& s, const std::string& token_name)
 {
@@ -138,13 +149,14 @@ Tokenizer::SimpleDFA Tokenizer::dfaForFixedString(const std::string& s, const st
 	return result;
 }
 
-bool Tokenizer::isWhitespace(char c)
+bool Tokenizer::readWhitespace(char c)
 {
 	switch (static_cast<int>(c))
 	{
 	case 9: // tab
 		return true;
 	case 10: // line feed
+		++lines_count_;
 		return true;
 	case 11: // line tabulation
 		return true;
@@ -179,7 +191,33 @@ std::string Tokenizer::parseSeperator(char c)
 		return "OPEN_BRACKET";
 	case ')':
 		return "CLOSE_BRACKET";
+	case '{':
+		return "OPEN_CURLY_BRACKET";
+	case '}':
+		return "CLOSE_CURLY_BRACKET";
+	case ',':
+		return "COMMA";
 	default:
 		return "";
 	}
+}
+
+bool Tokenizer::moveAcrossWhitespace()
+{
+	char c;
+	while (file_.get(c))
+	{
+		if (!readWhitespace(c))
+		{
+			file_.unget();
+			return true;
+		}
+	}
+	return false;
+}
+
+int Tokenizer::getCurrentLine()
+{
+	assert(file_.is_open());
+	return lines_count_ + 1;
 }

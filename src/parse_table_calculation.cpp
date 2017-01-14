@@ -4,8 +4,9 @@
 #include <iostream>
 #include <algorithm>
 
-ParseTableCalculation::ParseTableCalculation(const std::vector<std::vector<std::string>>& rules)
-	: rules_(rules)
+ParseTableCalculation::ParseTableCalculation(const std::vector<std::vector<std::string>>& rules, bool print_debug)
+	: print_debug_(print_debug),
+	  rules_(rules)
 {
 	assert(rules_.front().size() == 3);
 	assert(rules_.front()[2] == "EOF");
@@ -171,7 +172,7 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::applyOperatorPr
 {
 	//return {};
 	int state = 0;
-	std::map<std::string, ParseAction> action_to_pick = {
+	std::unordered_map<std::string, ParseAction> action_to_pick = {
 		{"ADD", ParseActionReduce},
 		{"SUB", ParseActionReduce},
 		{"MUL", ParseActionShift},
@@ -180,7 +181,7 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::applyOperatorPr
 	std::vector<std::vector<ParseTableEntry>> filtered_table(table.size());
 	for (int i = 0; i < static_cast<int>(table.size()); ++i)
 	{
-		std::map<std::string, ParseTableEntry> entries_by_token;
+		std::unordered_map<std::string, ParseTableEntry> entries_by_token;
 		std::vector<ParseTableEntry> filtered_row;
 		for (ParseTableEntry& entry : table[i])
 		{
@@ -191,7 +192,10 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::applyOperatorPr
 				assert(found_action != action_to_pick.end());
 				if (found_action->second == entry.action) // ditch the old one!!
 				{
-					std::cout << "ditching " << entry.action << " for " << entry.token << std::endl;
+					if (print_debug_)
+					{
+						std::cout << "ditching " << entry.action << " for " << entry.token << std::endl;
+					}
 					auto to_replace = std::find(filtered_row.begin(), filtered_row.end(), found->second);
 					assert(to_replace != filtered_row.end());
 					*to_replace = entry;
@@ -266,9 +270,19 @@ std::vector<std::vector<ParseTableEntry>> ParseTableCalculation::calculateTable(
 		}
 	}
 
-	printItemSets(item_sets);
+	if (print_debug_)
+	{
+		printItemSets(item_sets);
+	}
 
-	return applyOperatorPrecedence(result);;
+	result = applyOperatorPrecedence(result);
+
+	if (print_debug_)
+	{
+		printTable(result);
+	}
+
+	return result;
 }
 
 

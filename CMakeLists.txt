@@ -12,8 +12,6 @@ add_executable(script2000
 	src/parse_table.h
 )
 
-add_definitions(-D__cplusplus=201103L)
-
 target_link_libraries(script2000
 )
 

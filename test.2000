@@ -1,4 +1,11 @@
-a = 0.6 * (2 + 3);
-b=a*a-10.01;
+
+    a = 0.6 * (2 + 3);
+    b =a*a-10.01;
+test = function(a, b)
+{
+    print a * b;
+    return a / b;
+};
+test();
 print a;
 print b;
