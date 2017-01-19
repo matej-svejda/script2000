@@ -7,6 +7,95 @@
 Tokenizer::Tokenizer(const std::string& filename)
 	: file_(filename)
 {
+	SimpleDFA code_dfa;
+	code_dfa.transitions.resize(CodeModeStatesCount);
+	code_dfa.transitions[WaitingForInput] = [] (char c, const std::string& read_string, std::string& token_name)
+	{
+		if (detectWhitespace(c))
+		{
+			return WaitingForInput;
+		}
+		if (detectSeperator(c, token_name))
+		{
+			// TODO write seperator token
+			return WaitingForInput;
+		}
+		if (std::isalpha(c) || c == '_')
+		{
+			return ReadingVariable;
+		}
+		if (std::isdigit(c))
+		{
+			return ReadingNumber;
+		}
+		assert(false);
+	};
+	code_dfa.transitions[ReadingVariable] = [] (char c, const std::string& read_string, std::string& token_name)
+	{
+		std::string dummy;
+		if (detectWhitespace(c) || detectSeperator(c, dummy))
+		{
+			if (read_string == "print")
+			{
+				token_name = "PRINT";
+			}
+			else if (read_string == "function")
+			{
+				token_name = "FUNCTION";
+			}
+			else if (read_string == "return")
+			{
+				token_name = "RETURN";
+			}
+			else
+			{
+				token_name = "VARIABLE";
+			}
+			// TODO write variable
+			// TODO go back one
+			return WaitingForInput;
+		}
+		if (std::isalnum(c) || c == '_')
+		{
+			return ReadingVariable;
+		}
+		assert(false);
+	};
+	code_dfa.transitions[ReadingNumber] = [] (char c, const std::string& read_string, std::string& token_name)
+	{
+		std::string dummy;
+		if (detectWhitespace(c) || detectSeperator(c, dummy))
+		{
+			// write variable
+			// go back one
+			return WaitingForInput;
+		}
+		if (std::isdigit(c))
+		{
+			return ReadingNumber;
+		}
+		if (c == '.')
+		{
+			return ReadingNumberAfterDot;
+		}
+		assert(false);
+	};
+	code_dfa.transitions[ReadingNumberAfterDot] = [] (char c, const std::string& read_string, std::string& token_name)
+	{
+		std::string dummy;
+		if (detectWhitespace(c) || detectSeperator(c, dummy))
+		{
+			// write variable
+			// go back one
+			return WaitingForInput;
+		}
+		if (std::isdigit(c))
+		{
+			return ReadingNumberAfterDot;
+		}
+		assert(false);
+	};
+
 	dfas_.push_back(dfaForFixedString("print", "PRINT"));
 	dfas_.push_back(dfaForFixedString("function", "FUNCTION"));
 	dfas_.push_back(dfaForFixedString("return", "RETURN"));
@@ -52,6 +141,33 @@ Tokenizer::Tokenizer(const std::string& filename)
 		return -1;
 	});
 	dfas_.push_back(std::move(number));
+
+
+	SimpleDFA string;
+	string.tokenName = "STRING";
+	string.acceptingStates.insert(2);
+	string.transitions.push_back([] (char c)
+	{
+		if (c == '"')
+		{
+			return 1;
+		}
+		return -1;
+	});
+	string.transitions.push_back([] (char c)
+	{
+		if (c == '"')
+		{
+			return 2;
+		}
+		return 1;
+	});
+	string.transitions.push_back([] (char c)
+	{
+		return -1;
+	});
+	dfas_.push_back(std::move(string));
+
 }
 
 Tokenizer::~Tokenizer()
@@ -78,15 +194,15 @@ bool Tokenizer::getNextToken(std::string& token_name, std::string& read_string)
 			file_.close();
 			finish_up = true;
 		}
-		else if (readWhitespace(c))
+		else if ( detectWhitespace(c))
 		{
 			finish_up = true;
 		}
-		else if (!parseSeperator(c).empty())
+		else if (!detectSeperator(c).empty())
 		{
 			if (read_string.empty())
 			{
-				token_name = parseSeperator(c);
+				token_name = detectSeperator(c);
 				read_string = c;
 				return true;
 			}
@@ -149,14 +265,13 @@ Tokenizer::SimpleDFA Tokenizer::dfaForFixedString(const std::string& s, const st
 	return result;
 }
 
-bool Tokenizer::readWhitespace(char c)
+bool Tokenizer::detectWhitespace(char c)
 {
 	switch (static_cast<int>(c))
 	{
 	case 9: // tab
 		return true;
 	case 10: // line feed
-		++lines_count_;
 		return true;
 	case 11: // line tabulation
 		return true;
@@ -171,34 +286,34 @@ bool Tokenizer::readWhitespace(char c)
 	}
 }
 
-std::string Tokenizer::parseSeperator(char c)
+bool Tokenizer::detectSeperator(char c, std::string& token_name)
 {
 	switch (c)
 	{
 	case '=':
-		return "ASSIGN";
+		token_name = "ASSIGN"; return true;
 	case '+':
-		return "ADD";
+		token_name = "ADD"; return true;
 	case '-':
-		return "SUB";
+		token_name = "SUB"; return true;
 	case '*':
-		return "MUL";
+		token_name = "MUL"; return true;
 	case '/':
-		return "DIV";
-	case ';':
-		return "SEMICOLON";
+		token_name = "DIV"; return true;
+	case '; return true;':
+		token_name = "SEMICOLON"; return true;
 	case '(':
-		return "OPEN_BRACKET";
+		token_name = "OPEN_BRACKET"; return true;
 	case ')':
-		return "CLOSE_BRACKET";
+		token_name = "CLOSE_BRACKET"; return true;
 	case '{':
-		return "OPEN_CURLY_BRACKET";
+		token_name = "OPEN_CURLY_BRACKET"; return true;
 	case '}':
-		return "CLOSE_CURLY_BRACKET";
+		token_name = "CLOSE_CURLY_BRACKET"; return true;
 	case ',':
-		return "COMMA";
+		token_name = "COMMA"; return true;
 	default:
-		return "";
+		return false;
 	}
 }
 
@@ -207,7 +322,7 @@ bool Tokenizer::moveAcrossWhitespace()
 	char c;
 	while (file_.get(c))
 	{
-		if (!readWhitespace(c))
+		if (!detectWhitespace(c))
 		{
 			file_.unget();
 			return true;

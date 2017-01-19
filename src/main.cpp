@@ -102,6 +102,7 @@ int main(int argc, char* argv[])
 		{"rvalue", "rvalue", "MUL", "rvalue"},
 		{"rvalue", "rvalue", "DIV", "rvalue"},
 		{"rvalue", "OPEN_BRACKET", "rvalue", "CLOSE_BRACKET"},
+		{"rvalue", "STRING"},
 		{"rvalue", "NUMBER"},
 		{"rvalue", "VARIABLE"},
 		{"rvalue", "function"}

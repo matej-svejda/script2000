@@ -17,20 +17,32 @@ public:
 	int getCurrentLine();
 
 private:
+	enum CodeModeStates
+	{
+		WaitingForInput = 0,
+		ReadingVariable,
+		ReadingNumber,
+		ReadingNumberAfterDot,
+		CodeModeStatesCount
+	};
+
+	typedef std::function<int(char c, const std::string& read_string, std::string& token_name)> StateTransition;
+
 	struct SimpleDFA
 	{
 		std::string tokenName;
 		int state = 0;
+		std::vector<StateTransition> transitions;
+		StateTransition globalTransition;
 		std::unordered_set<int> acceptingStates;
-		std::vector<std::function<int(char)>> transitions;
 	};
 
 	bool moveAcrossWhitespace();
 	void finishDFAs(std::string& token_name);
 	void transitionDFAs(char c);
 
-	bool readWhitespace(char c);
-	static std::string parseSeperator(char c);
+	static bool detectWhitespace(char c);
+	static bool detectSeperator(char c, std::string& token_name);
 	static SimpleDFA dfaForFixedString(const std::string& s, const std::string& token_name);
 
 	int lines_count_ = 0;
