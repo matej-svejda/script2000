@@ -6,47 +6,24 @@
 #include <vector>
 #include <unordered_set>
 #include <algorithm>
+#include <regex>
 
 class Tokenizer
 {
 public:
 	Tokenizer(const std::string& filename);
-	~Tokenizer();
 
 	bool getNextToken(std::string& token_name, std::string& read_string);
 	int getCurrentLine();
 
 private:
-	enum CodeModeStates
-	{
-		WaitingForInput = 0,
-		ReadingVariable,
-		ReadingNumber,
-		ReadingNumberAfterDot,
-		CodeModeStatesCount
-	};
+	void readInWithoutComments(const std::string& filename);
+	static void trim(std::string& string);
 
-	typedef std::function<int(char c, const std::string& read_string, std::string& token_name)> StateTransition;
+	std::vector<std::string> lines_;
+	int current_line_index_ = -1;
 
-	struct SimpleDFA
-	{
-		std::string tokenName;
-		int state = 0;
-		std::vector<StateTransition> transitions;
-		StateTransition globalTransition;
-		std::unordered_set<int> acceptingStates;
-	};
-
-	bool moveAcrossWhitespace();
-	void finishDFAs(std::string& token_name);
-	void transitionDFAs(char c);
-
-	static bool detectWhitespace(char c);
-	static bool detectSeperator(char c, std::string& token_name);
-	static SimpleDFA dfaForFixedString(const std::string& s, const std::string& token_name);
-
-	int lines_count_ = 0;
-	std::ifstream file_;
-	std::vector<SimpleDFA> dfas_;
-
+	static constexpr char COMMENT = '#';
+	static const std::vector<std::pair<std::regex, std::string>> MATCHES;
+	static const std::regex WHITESPACE_REGEX;
 };

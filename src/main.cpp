@@ -47,7 +47,7 @@ void printHelp()
 {
 	std::cout << std::endl << "script2000 interpreter ᕙ༼ຈل͜ຈ༽ᕗ" << std::endl << std::endl
 			  << "Usage:" << std::endl
-			  << "\tscript2000 [--filename] filname [--table_debug] [--parser_debug] [--ast] [--debug]" << std::endl << std::endl;
+			  << "\tscript2000 [--filename] filname [--tokenizer_debug] [--table_debug] [--parser_debug] [--ast] [--debug]" << std::endl << std::endl;
 }
 
 int main(int argc, char* argv[])
@@ -69,10 +69,12 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
+	bool print_tokenizer_debug = args.find("tokenizer_debug") != args.end();
 	bool print_table_calculation_debug = args.find("table_debug") != args.end();
 	bool print_parser_debug = args.find("parser_debug") != args.end();
 	if (args.find("debug") != args.end())
 	{
+		print_tokenizer_debug = true;
 		print_table_calculation_debug = true;
 		print_parser_debug = true;
 	}
@@ -117,13 +119,17 @@ int main(int argc, char* argv[])
 	while (token != "EOF")
 	{
 		bool success = tokenizer.getNextToken(token, read_string);
+		if (print_tokenizer_debug)
+		{
+			std::cout << token << " [" << read_string << "]" << std::endl;
+		}
 		if (success)
 		{
 			success = parser.read(token, read_string);
 		}
 		if (!success)
 		{
-			std::string line = std::to_string(tokenizer.getCurrentLine());
+			std::string line = std::to_string(tokenizer.getCurrentLine() + 1);
 			printError("An error occurred on line " + line + " when parsing [" + read_string + "]");
 			return 1;
 		}
